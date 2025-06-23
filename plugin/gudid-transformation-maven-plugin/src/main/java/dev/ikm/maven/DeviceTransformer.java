@@ -1,7 +1,6 @@
 package dev.ikm.maven;
 
 import dev.ikm.tinkar.common.id.PublicIds;
-import dev.ikm.tinkar.common.util.time.DateTimeUtil;
 import dev.ikm.tinkar.common.util.uuid.UuidT5Generator;
 import dev.ikm.tinkar.composer.Composer;
 import dev.ikm.tinkar.composer.Session;
@@ -17,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -27,6 +28,7 @@ public class DeviceTransformer extends AbstractTransformer {
     private static final int PRIMARY_DI = 0;
     private static final int PUBLIC_DEVICE_RECORD_KEY = 1;
     private static final int DEVICE_RECORD_STATUS = 3;
+    private static final int DEVICE_PUBLISH_DATE = 6;
     private static final int BRAND_NAME = 9;
     private static final int VERSION_MODEL_NUMBER = 10;
 
@@ -45,15 +47,14 @@ public class DeviceTransformer extends AbstractTransformer {
             throw new RuntimeException("Concept input file is either null or invalid.");
         }
 
-        long sessionTime = DateTimeUtil.compressedDateParse("20250501"); // TODO
-
         AtomicInteger conceptCount = new AtomicInteger();
         try (Stream<String> lines = Files.lines(inputFile.toPath())) {
             lines.skip(1) //skip first line, i.e. header line
                     .map(row -> row.split("\\|"))
                     .forEach(data -> {
                         State status = "Published".equals(data[DEVICE_RECORD_STATUS]) ? State.ACTIVE : State.INACTIVE;
-                        Session session = composer.open(status, sessionTime, gudidUtility.getAuthorConcept(),
+                        long time = LocalDate.parse(data[DEVICE_PUBLISH_DATE]).atStartOfDay().atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+                        Session session = composer.open(status, time, gudidUtility.getAuthorConcept(),
                                 gudidUtility.getModuleConcept(), TinkarTerm.DEVELOPMENT_PATH);
 
                         EntityProxy.Concept concept = EntityProxy.Concept.make(PublicIds.of(UuidT5Generator.get(namespace, data[PRIMARY_DI])));

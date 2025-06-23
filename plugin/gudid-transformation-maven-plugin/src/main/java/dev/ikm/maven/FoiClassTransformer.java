@@ -90,9 +90,6 @@ public class FoiClassTransformer extends AbstractTransformer {
         AtomicInteger processedCount = new AtomicInteger(0);
         AtomicInteger skippedCount = new AtomicInteger(0);
 
-        // Use current time for all concepts
-        long currentTime = System.currentTimeMillis();
-
         try (Stream<String> lines = Files.lines(inputFile.toPath())) {
             lines.skip(1) // skip header line
                     .map(row -> row.split("\\|", -1)) // -1 to preserve empty trailing fields
@@ -124,7 +121,7 @@ public class FoiClassTransformer extends AbstractTransformer {
                             }
 
                             // Create session with ACTIVE state
-                            Session session = composer.open(State.ACTIVE, currentTime, author, module, path);
+                            Session session = composer.open(State.ACTIVE, author, module, path);
 
                             // Create the FDA Product Code concept
                             createFdaProductCodeConcept(session, medicalSpecialty, productCode, deviceName);
